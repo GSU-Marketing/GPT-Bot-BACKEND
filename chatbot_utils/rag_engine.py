@@ -1,14 +1,21 @@
 def get_answer(question, csv_data, vector_store):
-    # Search CSV responses first
-    for _, row in csv_data["responses"].iterrows():
-        if row['query'].lower() in question.lower():
-            return row['response']
-    for _, row in csv_data["faq"].iterrows():
-        if row['question'].lower() in question.lower():
-            return row['answer']
-    # If nothing found, fallback to site vector store (mock)
-    docs = vector_store.get("docs", [])
-    for doc in docs:
-        if question.lower() in doc.lower():
-            return doc
-    return "Sorry, I couldn't find an exact match. Can you rephrase?"
+    print(f"[DEBUG] Received query: {question}")
+
+    # 1. Try answering using the CSVs
+    for df_name, df in csv_data.items():
+        for _, row in df.iterrows():
+            for col in row.index:
+                cell = str(row[col])
+                if question.lower() in cell.lower():
+                    print(f"[DEBUG] Matched in CSV: {df_name} at column: {col}")
+                    return f"(from {df_name}) {cell}"
+
+    # 2. Try from vector store if CSV doesn't answer
+    try:
+        docs = vector_store.similarity_search(question, k=3)
+        context = "\n\n".join([doc.page_content for doc in docs])
+        print(f"[DEBUG] Context from vector store:\n{context}")
+        return f"(from site content)\n{context}"
+    except Exception as e:
+        print(f"[ERROR] Failed during vector search: {e}")
+        return "Error while retrieving site content."

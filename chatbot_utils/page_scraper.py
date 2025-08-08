@@ -8,6 +8,11 @@ def fetch_html(url):
     except:
         return ""
 
+def update_vector_store():
+    # ... do scraping & embedding ...
+    return FAISS.load_local(...)  # 👈 return the actual FAISS store
+
+
 def extract_text_from_html(html):
     soup = BeautifulSoup(html, "html.parser")
     return soup.get_text(separator=" ", strip=True)

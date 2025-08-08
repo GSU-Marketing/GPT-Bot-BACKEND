@@ -15,15 +15,29 @@ csv_data = {
 # Do not crawl at startup
 vector_store = None
 
-@app.get("/chat")
-def query_bot(q: str):
-    global vector_store
-    if not q:
-        return {"error": "No query provided."}
-    if vector_store is None:
-        return {"error": "Vector store not loaded. Please update pages first."}
-    answer = get_answer(q, csv_data, vector_store)
-    return {"answer": answer}
+def get_answer(query, csv_data, vector_store):
+    print(f"[DEBUG] Received query: {query}")
+
+    try:
+        # 1. Try to find a response from the CSVs first
+        for df_name, df in csv_data.items():
+            for _, row in df.iterrows():
+                if query.lower() in str(row.to_string()).lower():
+                    return f"(from CSV: {df_name}) {row.to_string()}"
+
+        # 2. Otherwise, use vector store (RAG from site content)
+        docs = vector_store.similarity_search(query, k=3)
+        context = "\n".join([doc.page_content for doc in docs])
+        print(f"[DEBUG] Top context:\n{context}")
+
+        # Simulated GPT-style output
+        return f"(from site data)\nAnswer based on: {context}"
+
+    except Exception as e:
+        print(f"[ERROR] Exception in get_answer: {e}")
+        return "An error occurred while processing your query."
+
+
 
 @app.post("/update")
 def refresh_pages():

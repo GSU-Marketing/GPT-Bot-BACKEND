@@ -12,7 +12,8 @@ vector_store = load_vector_store()
 
 @app.post("/update")
 def update():
-    update_vector_store()
+    global vector_store
+    vector_store = update_vector_store()  # ✅ capture the return value
     return {"status": "Vector store updated with latest pages"}
 
 @app.get("/chat")
